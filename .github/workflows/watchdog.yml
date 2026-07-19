@@ -1,0 +1,88 @@
+name: watchdog
+on:
+  schedule:
+    - cron: '0 5 * * *'   # всеки ден 05:00 UTC (07:00/08:00 София)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run checks
+        id: checks
+        run: |
+          FAILS=""
+          add_fail() { FAILS="${FAILS}- $1"$'\n'; echo "❌ $1"; }
+
+          # 1) Достъпност на страниците
+          for url in $(jq -r '.url_checks[]' targets.json); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$url" || echo "000")
+            if [ "$code" != "200" ]; then add_fail "URL $url → HTTP $code"; else echo "✅ $url"; fi
+          done
+
+          # 2) Свежест на данните (последен commit по файл)
+          n=$(jq '.freshness_checks | length' targets.json)
+          for i in $(seq 0 $((n-1))); do
+            repo=$(jq -r ".freshness_checks[$i].repo" targets.json)
+            path=$(jq -r ".freshness_checks[$i].path" targets.json)
+            maxh=$(jq -r ".freshness_checks[$i].max_hours" targets.json)
+            last=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
+              "https://api.github.com/repos/emillion-lab/$repo/commits?path=$path&per_page=1" \
+              | jq -r '.[0].commit.committer.date // empty')
+            if [ -z "$last" ]; then add_fail "$repo/$path — не мога да прочета последен commit"; continue; fi
+            age=$(( ( $(date +%s) - $(date -d "$last" +%s) ) / 3600 ))
+            if [ "$age" -gt "$maxh" ]; then
+              add_fail "$repo/$path — данните са на ${age}ч (праг ${maxh}ч), скрейперът вероятно е спрял"
+            else
+              echo "✅ $repo/$path — свежест ${age}ч (праг ${maxh}ч)"
+            fi
+          done
+
+          # 3) Валидност на JSON файловете
+          for url in $(jq -r '.json_validity_checks[]' targets.json); do
+            if curl -s -L --max-time 30 "$url" | jq empty 2>/dev/null; then
+              echo "✅ валиден JSON: $url"
+            else
+              add_fail "СЧУПЕН JSON: $url"
+            fi
+          done
+
+          if [ -n "$FAILS" ]; then
+            {
+              echo "fails<<EOF"
+              echo "$FAILS"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Open issue on failure
+        if: failure() && steps.checks.outputs.fails != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fails = `${{ steps.checks.outputs.fails }}`;
+            const today = new Date().toISOString().slice(0,10);
+            const title = `🚨 Watchdog: проблеми ${today}`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'watchdog'
+            });
+            const body = `Открити проблеми при проверката:\n\n${fails}\n[Лог на изпълнението](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existing.data[0].number, body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['watchdog']
+              });
+            }
