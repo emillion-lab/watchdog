@@ -1,0 +1,22 @@
+{
+  "url_checks": [
+    "https://fish.taxi/",
+    "https://emillion-lab.github.io/BAK/",
+    "https://emillion-lab.github.io/KAT/",
+    "https://emillion-lab.github.io/CCAT/",
+    "https://emillion-lab.github.io/Gramofonche/",
+    "https://emillion-lab.github.io/RUDA/",
+    "https://emillion-lab.github.io/BILKA/",
+    "https://emillion-lab.github.io/SCRUMHACK/"
+  ],
+  "freshness_checks": [
+    { "repo": "BAK", "path": "bus-arrivals.json", "max_hours": 24, "note": "скрейпер за автобусни пристигания" },
+    { "repo": "BAK", "path": "flight-cache.json", "max_hours": 24, "note": "скрейпер за полети" },
+    { "repo": "Gramofonche", "path": "index.html", "max_hours": 192, "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)" }
+  ],
+  "json_validity_checks": [
+    "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json",
+    "https://raw.githubusercontent.com/emillion-lab/BAK/main/flight-cache.json",
+    "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-schedule.json"
+  ]
+}
