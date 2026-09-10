@@ -4,15 +4,42 @@
     "https://emillion-lab.github.io/BAK/",
     "https://emillion-lab.github.io/KAT/",
     "https://emillion-lab.github.io/CCAT/",
-    "https://emillion-lab.github.io/Gramofonche/",
+    "https://emillion-lab.github.io/gramofonche/",
     "https://emillion-lab.github.io/RUDA/",
     "https://emillion-lab.github.io/BILKA/",
     "https://emillion-lab.github.io/SCRUMHACK/"
   ],
+  "api_checks": [
+    {
+      "url": "https://mvr-proxy.mihov-emil.workers.dev/health",
+      "expect": ".status == \"ok\"",
+      "note": "mvr-proxy /health"
+    },
+    {
+      "url": "https://mvr-proxy.mihov-emil.workers.dev/flights/SOF",
+      "expect": ".ok == true and (.count > 0)",
+      "note": "полети SOF (AeroDataBox ключ + API.market)"
+    },
+    {
+      "url": "https://mvr-proxy.mihov-emil.workers.dev/risk",
+      "expect": ".ok == true and (.score >= 1) and (.score <= 10)",
+      "note": "KAT риск /risk"
+    },
+    {
+      "url": "https://mvr-proxy.mihov-emil.workers.dev/traffic?pts=42.6977,23.3219",
+      "expect": ".ok == true and (.data | length) > 0",
+      "note": "TomTom трафик /traffic"
+    },
+    {
+      "url": "https://mvr-proxy.mihov-emil.workers.dev/gps",
+      "expect": ".ok == true",
+      "note": "GPS на шофьорите /gps"
+    }
+  ],
   "freshness_checks": [
     { "repo": "BAK", "path": "bus-arrivals.json", "max_hours": 24, "note": "скрейпер за автобусни пристигания" },
-    { "repo": "BAK", "path": "flight-cache.json", "max_hours": 24, "note": "скрейпер за полети" },
-    { "repo": "Gramofonche", "path": "index.html", "max_hours": 192, "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)" }
+    { "repo": "BAK", "path": "flight-cache.json", "max_hours": 12, "note": "скрейпер за полети (cron */30, троттлван до ~2-5ч)" },
+    { "repo": "gramofonche", "path": "index.html", "max_hours": 192, "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)" }
   ],
   "json_validity_checks": [
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json",
