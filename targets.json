@@ -37,13 +37,30 @@
     }
   ],
   "freshness_checks": [
-    { "repo": "BAK", "path": "bus-arrivals.json", "max_hours": 24, "note": "скрейпер за автобусни пристигания" },
-    { "repo": "BAK", "path": "flight-cache.json", "max_hours": 12, "note": "скрейпер за полети (cron */30, троттлван до ~2-5ч)" },
+    { "repo": "BAK", "path": "bus-arrivals.json", "max_hours": 24, "note": "автобусни пристигания" },
+    { "repo": "BAK", "path": "flight-cache.json", "max_hours": 12, "note": "полети (cron */30, троттлван до ~2-5ч)" },
+    { "repo": "SOF", "path": "flight-cache.json", "max_hours": 36, "note": "полети SOF (cron 05:00 и 10:00)" },
+    { "repo": "TAXISOFIA", "path": "flight-cache.json", "max_hours": 12, "note": "огледало на BAK (sync на 30 мин)" },
+    { "repo": "SEV", "path": "bilet_events.json", "max_hours": 36, "note": "Bilet.bg събития (2 пъти дневно)" },
+    { "repo": "SEV", "path": "events.json", "max_hours": 168, "note": "събития (понеделник и четвъртък)" },
+    { "repo": "ZUR", "path": "data/events.json", "max_hours": 48, "note": "Цюрих събития (дневно)" },
+    { "repo": "ZUR", "path": "data/flixbus.json", "max_hours": 30, "note": "Цюрих Flixbus (4 пъти дневно)" },
+    { "repo": "ZUR", "path": "data/transport.json", "max_hours": 30, "note": "Цюрих транспорт (4 пъти дневно)" },
+    { "repo": "FISHTAXI", "path": "data/registry.json", "max_hours": 240, "note": "национален таксиметров регистър (седмично, понеделник)" },
+    { "repo": "TAXI", "path": "registry-pull-report.txt", "max_hours": 1080, "note": "месечен снимков регистър (1-во число)" },
+    { "repo": "KRES", "path": "data/historic_profile.json", "max_hours": 1080, "note": "исторически профил на дефилето (месечно)" },
     { "repo": "gramofonche", "path": "index.html", "max_hours": 192, "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)" }
   ],
   "json_validity_checks": [
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json",
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/flight-cache.json",
-    "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-schedule.json"
+    "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-schedule.json",
+    "https://raw.githubusercontent.com/emillion-lab/SOF/main/flight-cache.json",
+    "https://raw.githubusercontent.com/emillion-lab/TAXISOFIA/main/flight-cache.json",
+    "https://raw.githubusercontent.com/emillion-lab/SEV/main/events.json",
+    "https://raw.githubusercontent.com/emillion-lab/ZUR/main/data/events.json",
+    "https://raw.githubusercontent.com/emillion-lab/ZUR/main/data/flixbus.json",
+    "https://raw.githubusercontent.com/emillion-lab/ZUR/main/data/transport.json",
+    "https://raw.githubusercontent.com/emillion-lab/FISHTAXI/main/data/registry.json"
   ]
 }
