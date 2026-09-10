@@ -27,8 +27,8 @@
     },
     {
       "url": "https://mvr-proxy.mihov-emil.workers.dev/traffic?pts=42.6977,23.3219",
-      "expect": ".ok == true and (.data | length) > 0",
-      "note": "TomTom трафик /traffic"
+      "expect": "(.data | length) > 0 and (.data[0].cur | numbers)",
+      "note": "TomTom трафик /traffic (отговорът няма поле ok — проверява се data)"
     },
     {
       "url": "https://mvr-proxy.mihov-emil.workers.dev/gps",
