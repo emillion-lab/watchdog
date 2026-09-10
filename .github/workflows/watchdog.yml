@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:
@@ -19,14 +19,39 @@ jobs:
         run: |
           FAILS=""
           add_fail() { FAILS="${FAILS}- $1"$'\n'; echo "❌ $1"; }
+          LOG="status.md"
+          echo "# Watchdog — последна проверка $(date -u '+%Y-%m-%d %H:%M UTC')" > $LOG
+          echo "" >> $LOG
+          log_ok() { echo "- ✅ $1" >> $LOG; echo "✅ $1"; }
+          log_bad() { echo "- ❌ $1" >> $LOG; add_fail "$1"; }
 
           # 1) Достъпност на страниците
           for url in $(jq -r '.url_checks[]' targets.json); do
             code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$url" || echo "000")
-            if [ "$code" != "200" ]; then add_fail "URL $url → HTTP $code"; else echo "✅ $url"; fi
+            if [ "$code" != "200" ]; then log_bad "URL $url → HTTP $code"; else log_ok "$url"; fi
           done
 
-          # 2) Свежест на данните (последен commit по файл)
+          # 2) Живи ендпойнти — не само HTTP 200, а и смислен отговор.
+          #    Уроци от 05–10.09.2026: /flights връщаше валиден JSON с грешка
+          #    вътре и HTTP 500. Проверка само за валиден JSON би го пропуснала.
+          n=$(jq '.api_checks | length' targets.json)
+          for i in $(seq 0 $((n-1))); do
+            url=$(jq -r ".api_checks[$i].url" targets.json)
+            expect=$(jq -r ".api_checks[$i].expect" targets.json)
+            note=$(jq -r ".api_checks[$i].note" targets.json)
+            code=$(curl -s -L --max-time 40 -o /tmp/api.json -w "%{http_code}" "$url" || echo "000")
+            if [ "$code" != "200" ]; then
+              log_bad "$note → HTTP $code · $(head -c 200 /tmp/api.json)"
+              continue
+            fi
+            if jq -e "$expect" /tmp/api.json > /dev/null 2>&1; then
+              log_ok "$note"
+            else
+              log_bad "$note → HTTP 200, но отговорът не изпълнява условието \`$expect\` · $(head -c 200 /tmp/api.json)"
+            fi
+          done
+
+          # 3) Свежест на данните (последен commit по файл)
           n=$(jq '.freshness_checks | length' targets.json)
           for i in $(seq 0 $((n-1))); do
             repo=$(jq -r ".freshness_checks[$i].repo" targets.json)
@@ -35,21 +60,21 @@ jobs:
             last=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
               "https://api.github.com/repos/emillion-lab/$repo/commits?path=$path&per_page=1" \
               | jq -r '.[0].commit.committer.date // empty')
-            if [ -z "$last" ]; then add_fail "$repo/$path — не мога да прочета последен commit"; continue; fi
+            if [ -z "$last" ]; then log_bad "$repo/$path — не мога да прочета последен commit"; continue; fi
             age=$(( ( $(date +%s) - $(date -d "$last" +%s) ) / 3600 ))
             if [ "$age" -gt "$maxh" ]; then
-              add_fail "$repo/$path — данните са на ${age}ч (праг ${maxh}ч), скрейперът вероятно е спрял"
+              log_bad "$repo/$path — данните са на ${age}ч (праг ${maxh}ч), скрейперът вероятно е спрял"
             else
-              echo "✅ $repo/$path — свежест ${age}ч (праг ${maxh}ч)"
+              log_ok "$repo/$path — свежест ${age}ч (праг ${maxh}ч)"
             fi
           done
 
-          # 3) Валидност на JSON файловете
+          # 4) Валидност на JSON файловете
           for url in $(jq -r '.json_validity_checks[]' targets.json); do
             if curl -s -L --max-time 30 "$url" | jq empty 2>/dev/null; then
-              echo "✅ валиден JSON: $url"
+              log_ok "валиден JSON: $url"
             else
-              add_fail "СЧУПЕН JSON: $url"
+              log_bad "СЧУПЕН JSON: $url"
             fi
           done
 
@@ -59,8 +84,28 @@ jobs:
               echo "$FAILS"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
+            echo "" >> $LOG
+            echo "**Резултат: има проблеми.**" >> $LOG
             exit 1
           fi
+          echo "" >> $LOG
+          echo "**Резултат: всичко е наред.**" >> $LOG
+
+      # Върви и при провал. Освен отчет, това е и keep-alive: GitHub спира
+      # scheduled workflows при репо без активност, а точно този не бива да
+      # заспива тихо — иначе никой не пази пазача.
+      - name: Запиши status.md
+        if: always()
+        run: |
+          git config user.name "watchdog"
+          git config user.email "watchdog@users.noreply.github.com"
+          git add status.md
+          git commit -m "watchdog: проверка $(date -u '+%Y-%m-%d %H:%M') [skip ci]" || exit 0
+          for i in 1 2 3; do
+            git fetch origin main && git rebase origin/main || git rebase --abort
+            git push && exit 0
+            sleep $((i * 5))
+          done
 
       - name: Open issue on failure
         if: failure() && steps.checks.outputs.fails != ''
