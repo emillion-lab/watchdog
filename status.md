@@ -1,4 +1,4 @@
-# Watchdog — последна проверка 2026-09-12 09:02 UTC
+# Watchdog — последна проверка 2026-09-13 10:01 UTC
 
 - ✅ https://fish.taxi/
 - ✅ https://emillion-lab.github.io/BAK/
@@ -9,23 +9,23 @@
 - ✅ https://emillion-lab.github.io/BILKA/
 - ✅ https://emillion-lab.github.io/SCRUMHACK/
 - ✅ mvr-proxy /health
-- ✅ полети SOF (AeroDataBox ключ + API.market)
+- ❌ полети SOF (AeroDataBox ключ + API.market) → HTTP 000000 · {"service":"fish.taxi Worker","status":"ok","version":"2.9.1"}
 - ✅ KAT риск /risk
 - ✅ TomTom трафик /traffic (отговорът няма поле ok — проверява се data)
 - ✅ GPS на шофьорите /gps
 - ✅ BAK/bus-arrivals.json — свежест 0ч (праг 24ч)
-- ✅ BAK/flight-cache.json — свежест 3ч (праг 12ч)
+- ✅ BAK/flight-cache.json — свежест 2ч (праг 12ч)
 - ✅ SOF/flight-cache.json — свежест 0ч (праг 36ч)
-- ✅ TAXISOFIA/flight-cache.json — свежест 4ч (праг 12ч)
+- ✅ TAXISOFIA/flight-cache.json — свежест 3ч (праг 12ч)
 - ✅ SEV/bilet_events.json — свежест 0ч (праг 36ч)
-- ✅ SEV/events.json — свежест 47ч (праг 168ч)
+- ✅ SEV/events.json — свежест 72ч (праг 168ч)
 - ✅ ZUR/data/events.json — свежест 0ч (праг 48ч)
-- ✅ ZUR/data/flixbus.json — свежест 8ч (праг 30ч)
+- ✅ ZUR/data/flixbus.json — свежест 9ч (праг 30ч)
 - ✅ ZUR/data/transport.json — свежест 0ч (праг 30ч)
-- ✅ FISHTAXI/data/registry.json — свежест 120ч (праг 240ч)
-- ✅ TAXI/registry-pull-report.txt — свежест 265ч (праг 1080ч)
-- ✅ KRES/data/historic_profile.json — свежест 264ч (праг 1080ч)
-- ✅ gramofonche/index.html — свежест 119ч (праг 192ч)
+- ✅ FISHTAXI/data/registry.json — свежест 145ч (праг 240ч)
+- ✅ TAXI/registry-pull-report.txt — свежест 290ч (праг 1080ч)
+- ✅ KRES/data/historic_profile.json — свежест 289ч (праг 1080ч)
+- ✅ gramofonche/index.html — свежест 144ч (праг 192ч)
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/BAK/main/flight-cache.json
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-schedule.json
@@ -37,4 +37,4 @@
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/ZUR/main/data/transport.json
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/FISHTAXI/main/data/registry.json
 
-**Резултат: всичко е наред.**
+**Резултат: има проблеми.**
