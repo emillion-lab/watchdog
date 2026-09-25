@@ -39,7 +39,6 @@
   "freshness_checks": [
     { "repo": "BAK", "path": "bus-arrivals.json", "max_hours": 24, "note": "автобусни пристигания" },
     { "repo": "BAK", "path": "flight-cache.json", "max_hours": 12, "note": "полети (cron */30, троттлван до ~2-5ч)" },
-    { "repo": "SOF", "path": "flight-cache.json", "max_hours": 36, "note": "полети SOF (cron 05:00 и 10:00)" },
     { "repo": "TAXISOFIA", "path": "flight-cache.json", "max_hours": 12, "note": "огледало на BAK (sync на 30 мин)" },
     { "repo": "SEV", "path": "bilet_events.json", "max_hours": 36, "note": "Bilet.bg събития (2 пъти дневно)" },
     { "repo": "SEV", "path": "events.json", "max_hours": 168, "note": "събития (понеделник и четвъртък)" },
@@ -55,7 +54,6 @@
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json",
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/flight-cache.json",
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-schedule.json",
-    "https://raw.githubusercontent.com/emillion-lab/SOF/main/flight-cache.json",
     "https://raw.githubusercontent.com/emillion-lab/TAXISOFIA/main/flight-cache.json",
     "https://raw.githubusercontent.com/emillion-lab/SEV/main/events.json",
     "https://raw.githubusercontent.com/emillion-lab/ZUR/main/data/events.json",
