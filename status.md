@@ -1,4 +1,4 @@
-# Watchdog — последна проверка 2026-10-08 11:48 UTC
+# Watchdog — последна проверка 2026-10-09 11:41 UTC
 
 - ✅ https://fish.taxi/
 - ✅ https://emillion-lab.github.io/BAK/
@@ -13,18 +13,18 @@
 - ✅ KAT риск /risk
 - ✅ TomTom трафик /traffic (отговорът няма поле ok — проверява се data)
 - ✅ GPS на шофьорите /gps
-- ❌ BAK/bus-arrivals.json — данните са на 182ч (праг 24ч), скрейперът вероятно е спрял
-- ✅ BAK/flight-cache.json — свежест 2ч (праг 12ч)
+- ❌ BAK/bus-arrivals.json — данните са на 206ч (праг 24ч), скрейперът вероятно е спрял
+- ✅ BAK/flight-cache.json — свежест 10ч (праг 12ч)
 - ✅ TAXISOFIA/flight-cache.json — свежест 5ч (праг 12ч)
 - ✅ SEV/bilet_events.json — свежест 0ч (праг 36ч)
-- ✅ SEV/events.json — свежест 71ч (праг 168ч)
+- ✅ SEV/events.json — свежест 23ч (праг 168ч)
 - ✅ ZUR/data/events.json — свежест 0ч (праг 48ч)
 - ✅ ZUR/data/flixbus.json — свежест 9ч (праг 30ч)
 - ✅ ZUR/data/transport.json — свежест 0ч (праг 30ч)
-- ✅ FISHTAXI/data/registry.json — свежест 73ч (праг 240ч)
-- ✅ TAXI/registry-pull-report.txt — свежест 170ч (праг 1080ч)
-- ✅ KRES/data/historic_profile.json — свежест 169ч (праг 1080ч)
-- ✅ gramofonche/index.html — свежест 72ч (праг 192ч)
+- ✅ FISHTAXI/data/registry.json — свежест 97ч (праг 240ч)
+- ✅ TAXI/registry-pull-report.txt — свежест 194ч (праг 1080ч)
+- ✅ KRES/data/historic_profile.json — свежест 193ч (праг 1080ч)
+- ✅ gramofonche/index.html — свежест 96ч (праг 192ч)
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/BAK/main/flight-cache.json
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-schedule.json
