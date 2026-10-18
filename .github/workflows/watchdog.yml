@@ -8,6 +8,14 @@ permissions:
   contents: write
   issues: write
 
+# Аларма само при ПРОМЯНА (18.10.2026).
+# Преди: рънът падаше всеки ден, докато имаше какъвто и да е проблем — 8 дни
+# поред червен за едни и същи два стари проблема, и алармата стана шум.
+# Сега: last_fails.txt пази ключовете на проблемите от предишната проверка.
+#   - нов проблем        → рънът пада (имейл) + коментар в issue
+#   - оправен проблем    → коментар в issue (рънът е зелен)
+#   - всичко е наред     → issue се затваря
+#   - същите стари       → тишина; виждат се в status.md
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -16,19 +24,25 @@ jobs:
 
       - name: Run checks
         id: checks
+        env:
+          LC_ALL: C
         run: |
-          FAILS=""
-          add_fail() { FAILS="${FAILS}- $1"$'\n'; echo "❌ $1"; }
+          FAILS=""; KEYS=""
           LOG="status.md"
           echo "# Watchdog — последна проверка $(date -u '+%Y-%m-%d %H:%M UTC')" > $LOG
           echo "" >> $LOG
           log_ok() { echo "- ✅ $1" >> $LOG; echo "✅ $1"; }
-          log_bad() { echo "- ❌ $1" >> $LOG; add_fail "$1"; }
+          # $1 = стабилен ключ (без часове/възраст), $2 = съобщение
+          log_bad() {
+            echo "- ❌ $2" >> $LOG; echo "❌ $2"
+            FAILS="${FAILS}- $2"$'\n'
+            KEYS="${KEYS}$1"$'\n'
+          }
 
           # 1) Достъпност на страниците
           for url in $(jq -r '.url_checks[]' targets.json); do
             code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 30 "$url" || echo "000")
-            if [ "$code" != "200" ]; then log_bad "URL $url → HTTP $code"; else log_ok "$url"; fi
+            if [ "$code" != "200" ]; then log_bad "url $url" "URL $url → HTTP $code"; else log_ok "$url"; fi
           done
 
           # 2) Живи ендпойнти — не само HTTP 200, а и смислен отговор.
@@ -41,13 +55,13 @@ jobs:
             note=$(jq -r ".api_checks[$i].note" targets.json)
             code=$(curl -s -L --max-time 40 -o /tmp/api.json -w "%{http_code}" "$url" || echo "000")
             if [ "$code" != "200" ]; then
-              log_bad "$note → HTTP $code · $(head -c 200 /tmp/api.json)"
+              log_bad "api $url" "$note → HTTP $code · $(head -c 200 /tmp/api.json)"
               continue
             fi
             if jq -e "$expect" /tmp/api.json > /dev/null 2>&1; then
               log_ok "$note"
             else
-              log_bad "$note → HTTP 200, но отговорът не изпълнява условието \`$expect\` · $(head -c 200 /tmp/api.json)"
+              log_bad "api $url" "$note → HTTP 200, но отговорът не изпълнява условието \`$expect\` · $(head -c 200 /tmp/api.json)"
             fi
           done
 
@@ -60,10 +74,10 @@ jobs:
             last=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
               "https://api.github.com/repos/emillion-lab/$repo/commits?path=$path&per_page=1" \
               | jq -r '.[0].commit.committer.date // empty')
-            if [ -z "$last" ]; then log_bad "$repo/$path — не мога да прочета последен commit"; continue; fi
+            if [ -z "$last" ]; then log_bad "fresh $repo/$path" "$repo/$path — не мога да прочета последен commit"; continue; fi
             age=$(( ( $(date +%s) - $(date -d "$last" +%s) ) / 3600 ))
             if [ "$age" -gt "$maxh" ]; then
-              log_bad "$repo/$path — данните са на ${age}ч (праг ${maxh}ч), скрейперът вероятно е спрял"
+              log_bad "fresh $repo/$path" "$repo/$path — данните са на ${age}ч (праг ${maxh}ч), скрейперът вероятно е спрял"
             else
               log_ok "$repo/$path — свежест ${age}ч (праг ${maxh}ч)"
             fi
@@ -74,32 +88,43 @@ jobs:
             if curl -s -L --max-time 30 "$url" | jq empty 2>/dev/null; then
               log_ok "валиден JSON: $url"
             else
-              log_bad "СЧУПЕН JSON: $url"
+              log_bad "json $url" "СЧУПЕН JSON: $url"
             fi
           done
 
-          if [ -n "$FAILS" ]; then
-            {
-              echo "fails<<EOF"
-              echo "$FAILS"
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-            echo "" >> $LOG
-            echo "**Резултат: има проблеми.**" >> $LOG
-            exit 1
-          fi
+          # 5) Сравнение с предишната проверка
+          touch last_fails.txt
+          printf '%s' "$KEYS" | sed '/^$/d' | sort -u > /tmp/now.txt
+          NEW=$(comm -13 last_fails.txt /tmp/now.txt)
+          GONE=$(comm -23 last_fails.txt /tmp/now.txt)
+          cp /tmp/now.txt last_fails.txt
+
+          {
+            echo "fails<<EOF"; echo "$FAILS"; echo "EOF"
+            echo "new<<EOF";   echo "$NEW";   echo "EOF"
+            echo "gone<<EOF";  echo "$GONE";  echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
           echo "" >> $LOG
-          echo "**Резултат: всичко е наред.**" >> $LOG
+          if [ -n "$NEW" ]; then
+            echo "**Резултат: НОВ проблем.**" >> $LOG
+            echo "Нови: $NEW"
+            exit 1
+          elif [ -n "$FAILS" ]; then
+            echo "**Резултат: само известни проблеми, нищо ново.**" >> $LOG
+          else
+            echo "**Резултат: всичко е наред.**" >> $LOG
+          fi
 
       # Върви и при провал. Освен отчет, това е и keep-alive: GitHub спира
       # scheduled workflows при репо без активност, а точно този не бива да
       # заспива тихо — иначе никой не пази пазача.
-      - name: Запиши status.md
+      - name: Запиши status.md и last_fails.txt
         if: always()
         run: |
           git config user.name "watchdog"
           git config user.email "watchdog@users.noreply.github.com"
-          git add status.md
+          git add status.md last_fails.txt
           git commit -m "watchdog: проверка $(date -u '+%Y-%m-%d %H:%M') [skip ci]" || exit 0
           for i in 1 2 3; do
             git fetch origin main && git rebase origin/main || git rebase --abort
@@ -107,27 +132,32 @@ jobs:
             sleep $((i * 5))
           done
 
-      - name: Open issue on failure
-        if: failure() && steps.checks.outputs.fails != ''
+      # Текстът минава през env, не през ${{ }} в JS — съобщенията съдържат
+      # backticks (условието на jq), които чупеха template literal-а.
+      - name: Issue при промяна
+        if: always() && (steps.checks.outputs.new != '' || steps.checks.outputs.gone != '')
         uses: actions/github-script@v7
+        env:
+          FAILS: ${{ steps.checks.outputs.fails }}
+          NEW: ${{ steps.checks.outputs.new }}
+          GONE: ${{ steps.checks.outputs.gone }}
         with:
           script: |
-            const fails = `${{ steps.checks.outputs.fails }}`;
-            const today = new Date().toISOString().slice(0,10);
-            const title = `🚨 Watchdog: проблеми ${today}`;
-            const existing = await github.rest.issues.listForRepo({
-              owner: context.repo.owner, repo: context.repo.repo,
-              state: 'open', labels: 'watchdog'
-            });
-            const body = `Открити проблеми при проверката:\n\n${fails}\n[Лог на изпълнението](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`;
-            if (existing.data.length > 0) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner, repo: context.repo.repo,
-                issue_number: existing.data[0].number, body
-              });
-            } else {
-              await github.rest.issues.create({
-                owner: context.repo.owner, repo: context.repo.repo,
-                title, body, labels: ['watchdog']
-              });
+            const { FAILS, NEW, GONE } = process.env;
+            const owner = context.repo.owner, repo = context.repo.repo;
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const open = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: 'watchdog' });
+            const parts = [];
+            if (NEW.trim())  parts.push(`🆕 **Нови проблеми:**\n${NEW.trim().split('\n').map(k => '- ' + k).join('\n')}`);
+            if (GONE.trim()) parts.push(`✅ **Оправени:**\n${GONE.trim().split('\n').map(k => '- ' + k).join('\n')}`);
+            parts.push(FAILS.trim() ? `**Всички текущи проблеми:**\n${FAILS.trim()}` : '**Всичко е наред.**');
+            parts.push(`[Лог](${run})`);
+            const body = parts.join('\n\n');
+            if (open.data.length > 0) {
+              const num = open.data[0].number;
+              await github.rest.issues.createComment({ owner, repo, issue_number: num, body });
+              if (!FAILS.trim()) await github.rest.issues.update({ owner, repo, issue_number: num, state: 'closed' });
+            } else if (FAILS.trim()) {
+              const today = new Date().toISOString().slice(0, 10);
+              await github.rest.issues.create({ owner, repo, title: `🚨 Watchdog: проблеми ${today}`, body, labels: ['watchdog'] });
             }
