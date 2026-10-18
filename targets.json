@@ -48,7 +48,8 @@
     { "repo": "FISHTAXI", "path": "data/registry.json", "max_hours": 240, "note": "национален таксиметров регистър (седмично, понеделник)" },
     { "repo": "TAXI", "path": "registry-pull-report.txt", "max_hours": 1080, "note": "месечен снимков регистър (1-во число)" },
     { "repo": "KRES", "path": "data/historic_profile.json", "max_hours": 1080, "note": "исторически профил на дефилето (месечно)" },
-    { "repo": "gramofonche", "path": "index.html", "max_hours": 192, "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)" }
+    { "repo": "gramofonche", "path": "index.html", "max_hours": 192, "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)" },
+    { "repo": "KAT", "path": "data/risk_now.json", "max_hours": 12, "note": "Publish Risk (cron часово, реално на 3-5ч заради троттлване); при отказ на Open-Meteo пази стария файл — това го хваща" }
   ],
   "json_validity_checks": [
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json",
