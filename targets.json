@@ -34,22 +34,98 @@
       "url": "https://mvr-proxy.mihov-emil.workers.dev/gps",
       "expect": ".ok == true",
       "note": "GPS на шофьорите /gps"
+    },
+    {
+      "url": "https://sos.mihov-emil.workers.dev/health",
+      "expect": ".ok == true",
+      "note": "SOS /health"
     }
   ],
   "freshness_checks": [
-    { "repo": "BAK", "path": "bus-arrivals.json", "max_hours": 24, "note": "автобусни пристигания" },
-    { "repo": "BAK", "path": "flight-cache.json", "max_hours": 12, "note": "полети (cron */30, троттлван до ~2-5ч)" },
-    { "repo": "TAXISOFIA", "path": "flight-cache.json", "max_hours": 12, "note": "огледало на BAK (sync на 30 мин)" },
-    { "repo": "SEV", "path": "bilet_events.json", "max_hours": 36, "note": "Bilet.bg събития (2 пъти дневно)" },
-    { "repo": "SEV", "path": "events.json", "max_hours": 168, "note": "събития (понеделник и четвъртък)" },
-    { "repo": "ZUR", "path": "data/events.json", "max_hours": 48, "note": "Цюрих събития (дневно)" },
-    { "repo": "ZUR", "path": "data/flixbus.json", "max_hours": 30, "note": "Цюрих Flixbus (4 пъти дневно)" },
-    { "repo": "ZUR", "path": "data/transport.json", "max_hours": 30, "note": "Цюрих транспорт (4 пъти дневно)" },
-    { "repo": "FISHTAXI", "path": "data/registry.json", "max_hours": 240, "note": "национален таксиметров регистър (седмично, понеделник)" },
-    { "repo": "TAXI", "path": "registry-pull-report.txt", "max_hours": 1080, "note": "месечен снимков регистър (1-во число)" },
-    { "repo": "KRES", "path": "data/historic_profile.json", "max_hours": 1080, "note": "исторически профил на дефилето (месечно)" },
-    { "repo": "gramofonche", "path": "index.html", "max_hours": 192, "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)" },
-    { "repo": "KAT", "path": "data/risk_now.json", "max_hours": 12, "note": "Publish Risk (cron часово, реално на 3-5ч заради троттлване); при отказ на Open-Meteo пази стария файл — това го хваща" }
+    {
+      "repo": "BAK",
+      "path": "bus-arrivals.json",
+      "max_hours": 24,
+      "note": "автобусни пристигания"
+    },
+    {
+      "repo": "BAK",
+      "path": "flight-cache.json",
+      "max_hours": 12,
+      "note": "полети (cron */30, троттлван до ~2-5ч)"
+    },
+    {
+      "repo": "TAXISOFIA",
+      "path": "flight-cache.json",
+      "max_hours": 12,
+      "note": "огледало на BAK (sync на 30 мин)"
+    },
+    {
+      "repo": "SEV",
+      "path": "bilet_events.json",
+      "max_hours": 36,
+      "note": "Bilet.bg събития (2 пъти дневно)"
+    },
+    {
+      "repo": "SEV",
+      "path": "events.json",
+      "max_hours": 168,
+      "note": "събития (понеделник и четвъртък)"
+    },
+    {
+      "repo": "ZUR",
+      "path": "data/events.json",
+      "max_hours": 48,
+      "note": "Цюрих събития (дневно)"
+    },
+    {
+      "repo": "ZUR",
+      "path": "data/flixbus.json",
+      "max_hours": 30,
+      "note": "Цюрих Flixbus (4 пъти дневно)"
+    },
+    {
+      "repo": "ZUR",
+      "path": "data/transport.json",
+      "max_hours": 30,
+      "note": "Цюрих транспорт (4 пъти дневно)"
+    },
+    {
+      "repo": "FISHTAXI",
+      "path": "data/registry.json",
+      "max_hours": 240,
+      "note": "национален таксиметров регистър (седмично, понеделник)"
+    },
+    {
+      "repo": "TAXI",
+      "path": "registry-pull-report.txt",
+      "max_hours": 400,
+      "note": "снимков регистър (1-во и 15-то число; праг ~16 дни)"
+    },
+    {
+      "repo": "KRES",
+      "path": "data/historic_profile.json",
+      "max_hours": 1080,
+      "note": "исторически профил на дефилето (месечно)"
+    },
+    {
+      "repo": "gramofonche",
+      "path": "index.html",
+      "max_hours": 192,
+      "note": "седмичен ъпдейт през mvr-proxy (праг 8 дни)"
+    },
+    {
+      "repo": "KAT",
+      "path": "data/risk_now.json",
+      "max_hours": 12,
+      "note": "Publish Risk (cron часово, реално на 3-5ч заради троттлване); при отказ на Open-Meteo пази стария файл — това го хваща"
+    },
+    {
+      "repo": "KAT",
+      "path": "data/mvr_accidents.json",
+      "max_hours": 72,
+      "note": "МВР дневни данни от новинарски заглавия (дневно, 06:00 UTC)"
+    }
   ],
   "json_validity_checks": [
     "https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json",
