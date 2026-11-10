@@ -1,4 +1,4 @@
-# Watchdog — последна проверка 2026-11-10 13:04 UTC
+# Watchdog — последна проверка 2026-11-10 13:16 UTC
 
 - ✅ https://fish.taxi/
 - ✅ https://emillion-lab.github.io/BAK/
@@ -25,7 +25,7 @@
 - ✅ FISHTAXI/data/registry.json — свежест 25ч (праг 240ч)
 - ✅ TAXI/registry-pull-report.txt — свежест 219ч (праг 400ч)
 - ✅ KRES/data/historic_profile.json — свежест 218ч (праг 1080ч)
-- ✅ gramofonche/index.html — свежест 23ч (праг 192ч)
+- ✅ gramofonche/index.html — свежест 24ч (праг 192ч)
 - ✅ KAT/data/risk_now.json — свежест 1ч (праг 12ч)
 - ✅ KAT/data/mvr_accidents.json — свежест 21ч (праг 72ч)
 - ✅ валиден JSON: https://raw.githubusercontent.com/emillion-lab/BAK/main/bus-arrivals.json
