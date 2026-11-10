@@ -16,6 +16,10 @@ permissions:
 #   - оправен проблем    → коментар в issue (рънът е зелен)
 #   - всичко е наред     → issue се затваря
 #   - същите стари       → тишина; виждат се в status.md
+# Напомняне (10.11.2026): същият проблем, стоящ над 7 дни, пуска рънът червен
+# веднъж седмично. Иначе автобусите в BAK стояха 41 дни със зелен статус
+# „само известни проблеми“. fail_since.txt пази кога е видян за първи път и
+# кога е напомнено за последно (ключ, таб, epoch, таб, epoch).
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -99,16 +103,42 @@ jobs:
           GONE=$(comm -23 last_fails.txt /tmp/now.txt)
           cp /tmp/now.txt last_fails.txt
 
+          # 6) От кога стои всеки проблем + седмично напомняне
+          touch fail_since.txt
+          NOWS=$(date +%s); WEEK=$((7*86400)); REMIND=""
+          : > /tmp/since.new
+          while IFS= read -r k; do
+            [ -z "$k" ] && continue
+            line=$(awk -F'\t' -v k="$k" '$1==k' fail_since.txt | head -1)
+            if [ -n "$line" ]; then first=$(printf '%s' "$line" | cut -f2); lastal=$(printf '%s' "$line" | cut -f3)
+            else first=$NOWS; lastal=$NOWS; fi
+            if [ $((NOWS - lastal)) -ge $WEEK ]; then
+              REMIND="${REMIND}${k} (стои от $(( (NOWS - first) / 86400 )) дни)"$'\n'
+              lastal=$NOWS
+            fi
+            printf '%s\t%s\t%s\n' "$k" "$first" "$lastal" >> /tmp/since.new
+          done < /tmp/now.txt
+          cp /tmp/since.new fail_since.txt
+          if [ -s fail_since.txt ]; then
+            echo "" >> $LOG; echo "**От кога стоят:**" >> $LOG
+            while IFS=$'\t' read -r k f l; do echo "- $k — $(( (NOWS - f) / 86400 )) дни" >> $LOG; done < fail_since.txt
+          fi
+
           {
             echo "fails<<EOF"; echo "$FAILS"; echo "EOF"
             echo "new<<EOF";   echo "$NEW";   echo "EOF"
             echo "gone<<EOF";  echo "$GONE";  echo "EOF"
+            echo "remind<<EOF"; echo "$REMIND"; echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
           echo "" >> $LOG
           if [ -n "$NEW" ]; then
             echo "**Резултат: НОВ проблем.**" >> $LOG
             echo "Нови: $NEW"
+            exit 1
+          elif [ -n "$REMIND" ]; then
+            echo "**Резултат: НАПОМНЯНЕ — стои над 7 дни.**" >> $LOG
+            echo "Напомняне: $REMIND"
             exit 1
           elif [ -n "$FAILS" ]; then
             echo "**Резултат: само известни проблеми, нищо ново.**" >> $LOG
@@ -124,7 +154,8 @@ jobs:
         run: |
           git config user.name "watchdog"
           git config user.email "watchdog@users.noreply.github.com"
-          git add status.md last_fails.txt
+          touch fail_since.txt
+          git add status.md last_fails.txt fail_since.txt
           git commit -m "watchdog: проверка $(date -u '+%Y-%m-%d %H:%M') [skip ci]" || exit 0
           for i in 1 2 3; do
             git fetch origin main && git rebase origin/main || git rebase --abort
@@ -135,20 +166,22 @@ jobs:
       # Текстът минава през env, не през ${{ }} в JS — съобщенията съдържат
       # backticks (условието на jq), които чупеха template literal-а.
       - name: Issue при промяна
-        if: always() && (steps.checks.outputs.new != '' || steps.checks.outputs.gone != '')
+        if: always() && (steps.checks.outputs.new != '' || steps.checks.outputs.gone != '' || steps.checks.outputs.remind != '')
         uses: actions/github-script@v7
         env:
           FAILS: ${{ steps.checks.outputs.fails }}
           NEW: ${{ steps.checks.outputs.new }}
           GONE: ${{ steps.checks.outputs.gone }}
+          REMIND: ${{ steps.checks.outputs.remind }}
         with:
           script: |
-            const { FAILS, NEW, GONE } = process.env;
+            const { FAILS, NEW, GONE, REMIND } = process.env;
             const owner = context.repo.owner, repo = context.repo.repo;
             const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
             const open = await github.rest.issues.listForRepo({ owner, repo, state: 'open', labels: 'watchdog' });
             const parts = [];
             if (NEW.trim())  parts.push(`🆕 **Нови проблеми:**\n${NEW.trim().split('\n').map(k => '- ' + k).join('\n')}`);
+            if ((REMIND || '').trim()) parts.push(`⏰ **Стоят над 7 дни:**\n${REMIND.trim().split('\n').map(k => '- ' + k).join('\n')}`);
             if (GONE.trim()) parts.push(`✅ **Оправени:**\n${GONE.trim().split('\n').map(k => '- ' + k).join('\n')}`);
             parts.push(FAILS.trim() ? `**Всички текущи проблеми:**\n${FAILS.trim()}` : '**Всичко е наред.**');
             parts.push(`[Лог](${run})`);
